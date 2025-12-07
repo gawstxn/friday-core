@@ -5,7 +5,7 @@ import { InteractionType, InteractionResponseType, APIInteraction } from 'discor
 
 export async function POST(req: NextRequest) {
   try {
-    const publicKey = process.env.DISCORD_CLIENT_PUBLIC_KEY
+    const publicKey = process.env.DISCORD_PUBLIC_KEY
     const appId = process.env.DISCORD_APPLICATION_ID
 
     if (!publicKey || !appId) console.log('⚠️ Missing DISCORD_CLIENT_PUBLIC_KEY or DISCORD_APPLICATION_ID environment variables')

@@ -26,8 +26,6 @@ export interface CommandContext {
     id: string
   }
 }
-
-// Union type สำหรับทุก response type ที่เป็นไปได้
 export type InteractionResponse =
   | APIInteractionResponsePong
   | APIInteractionResponseChannelMessageWithSource
@@ -40,21 +38,11 @@ export interface Command {
   description: string
   type?: number
   options?: APIApplicationCommandOption[]
-  execute: (
-    ctx: CommandContext
-  ) => Promise<InteractionResponse> | InteractionResponse
+  execute: (ctx: CommandContext) => Promise<InteractionResponse> | InteractionResponse
 }
 
 export interface CommandRegistry {
   [key: string]: Command
 }
 
-// Re-export useful types
-export type {
-  APIInteraction,
-  APIChatInputApplicationCommandInteraction,
-  APIUser,
-  APIGuildMember,
-  ApplicationCommandOptionType,
-  APIInteractionResponseChannelMessageWithSource,
-}
+export type { APIInteraction, APIChatInputApplicationCommandInteraction, APIUser, APIGuildMember, ApplicationCommandOptionType, APIInteractionResponseChannelMessageWithSource }

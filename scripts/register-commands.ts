@@ -1,44 +1,40 @@
-import { commands } from '@/commands'
+import dotenv from 'dotenv'
+import path from 'path'
+dotenv.config({ path: path.resolve(process.cwd(), '.env') })
 
-const DISCORD_API_URL = 'https://discord.com/api/v10'
+import { commands } from '@/commands'
+const DISCORD_API_URL = process.env.DISCORD_API_URL
 
 async function registerCommands() {
   const token = process.env.DISCORD_BOT_TOKEN
-  const appId = process.env.DISCORD_APP_ID
-
+  const appId = process.env.DISCORD_APPLICATION_ID
   if (!token || !appId) {
-    console.error('Missing env vars')
+    console.error('❌ Missing env vars: DISCORD_BOT_TOKEN or DISCORD_APPLICATION_ID')
     process.exit(1)
   }
-
-  // แปลง Object commands เป็น Array ของ definitions
   const commandsList = Object.values(commands).map((cmd) => cmd.definition)
-
-  console.log(`Registering ${commandsList.length} commands...`)
+  console.log(`Registering ${commandsList.length} commands to App ID: ${appId}...`)
 
   try {
-    const response = await fetch(
-      `${DISCORD_API_URL}/applications/${appId}/commands`,
-      {
-        method: 'PUT',
-        headers: {
-          Authorization: `Bot ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(commandsList),
-      }
-    )
+    const response = await fetch(`${DISCORD_API_URL}/applications/${appId}/commands`, {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bot ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(commandsList),
+    })
 
     if (response.ok) {
       console.log('✅ Successfully registered commands!')
-      // แสดงรายชื่อคำสั่งที่ลงทะเบียนไป
       commandsList.forEach((c) => console.log(` - /${c.name}`))
     } else {
-      const text = await response.text()
-      console.error('❌ Failed:', text)
+      // อ่าน Error text ให้ละเอียดขึ้น
+      const errorData = await response.json()
+      console.error('❌ Failed:', JSON.stringify(errorData, null, 2))
     }
   } catch (error) {
-    console.error(error)
+    console.error('❌ Error:', error)
   }
 }
 

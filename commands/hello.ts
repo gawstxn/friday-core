@@ -7,9 +7,7 @@ export const definition = {
 }
 
 export const handler: Command['handler'] = async (interaction) => {
-  // เราสามารถดึงข้อมูล User ได้จาก interaction.member.user
   const user = interaction.member?.user
-
   return {
     type: InteractionResponseType.ChannelMessageWithSource,
     data: {

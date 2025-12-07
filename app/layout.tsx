@@ -22,9 +22,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${ibmPlexSansThai.variable} antialiased`}>
-        {children}
-      </body>
+      <body className={`${ibmPlexSansThai.variable} antialiased`}>{children}</body>
     </html>
   )
 }

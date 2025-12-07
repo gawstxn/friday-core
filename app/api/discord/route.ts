@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
     const body = await req.text()
 
     if (!signature || !timestamp) return NextResponse.json({ error: 'Missing request headers' }, { status: 401 })
-    const isValidRequest = await verifyDiscordRequest(body, signature, timestamp, process.env.DISCORD_CLIENT_PUBLIC_KEY!)
+    const isValidRequest = await verifyDiscordRequest(body, signature, timestamp, publicKey!)
 
     if (!isValidRequest) return NextResponse.json({ error: 'Invalid request signature' }, { status: 401 })
     const interaction: APIInteraction = JSON.parse(body)

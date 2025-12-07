@@ -1,6 +1,6 @@
 import { InteractionResponseType } from 'discord-interactions'
 import type { Command } from '../lib/types'
-import { COLORS, EMOJIS } from '@/lib/contants'
+import { COLORS, EMOJIS } from '@/lib/constants'
 import { createEmbed } from '@/lib/discord'
 
 export const infoCommand: Command = {

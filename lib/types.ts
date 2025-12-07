@@ -1,11 +1,15 @@
 import type {
   APIInteraction,
   APIChatInputApplicationCommandInteraction,
-  APIInteractionResponse,
   APIUser,
   APIGuildMember,
   APIApplicationCommandOption,
   ApplicationCommandOptionType,
+  APIInteractionResponseChannelMessageWithSource,
+  APIInteractionResponsePong,
+  APIInteractionResponseDeferredChannelMessageWithSource,
+  APIInteractionResponseDeferredMessageUpdate,
+  APIInteractionResponseUpdateMessage,
 } from 'discord-api-types/v10'
 
 export interface CommandContext {
@@ -23,6 +27,14 @@ export interface CommandContext {
   }
 }
 
+// Union type สำหรับทุก response type ที่เป็นไปได้
+export type InteractionResponse =
+  | APIInteractionResponsePong
+  | APIInteractionResponseChannelMessageWithSource
+  | APIInteractionResponseDeferredChannelMessageWithSource
+  | APIInteractionResponseDeferredMessageUpdate
+  | APIInteractionResponseUpdateMessage
+
 export interface Command {
   name: string
   description: string
@@ -30,7 +42,7 @@ export interface Command {
   options?: APIApplicationCommandOption[]
   execute: (
     ctx: CommandContext
-  ) => Promise<APIInteractionResponse> | APIInteractionResponse
+  ) => Promise<InteractionResponse> | InteractionResponse
 }
 
 export interface CommandRegistry {
@@ -41,8 +53,8 @@ export interface CommandRegistry {
 export type {
   APIInteraction,
   APIChatInputApplicationCommandInteraction,
-  APIInteractionResponse,
   APIUser,
   APIGuildMember,
   ApplicationCommandOptionType,
+  APIInteractionResponseChannelMessageWithSource,
 }

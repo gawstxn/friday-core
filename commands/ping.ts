@@ -1,16 +1,16 @@
-import { InteractionResponseType } from 'discord-interactions'
-import type { Command } from '../lib/types'
-import { EMOJIS } from '@/lib/contants'
-import { createResponse } from '../lib/discord'
+import { Command } from './index'
+import { InteractionResponseType } from 'discord-api-types/v10'
 
-export const pingCommand: Command = {
+export const definition = {
   name: 'ping',
-  description: 'ตรวจสอบการตอบสนองของ bot',
-  type: 1,
-  execute: async () => {
-    return {
-      type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-      data: createResponse(`${EMOJIS.PING} Pong!`),
-    }
-  },
+  description: 'Checks the bot latency',
+}
+
+export const handler: Command['handler'] = async () => {
+  return {
+    type: InteractionResponseType.ChannelMessageWithSource,
+    data: {
+      content: 'Pong! 🏓 (from separated file)',
+    },
+  }
 }

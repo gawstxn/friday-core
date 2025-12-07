@@ -1,19 +1,26 @@
-import type { CommandRegistry } from '../lib/types'
-import { helloCommand } from './hello'
-import { pingCommand } from './ping'
-import { infoCommand } from './info'
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import {
+  APIApplicationCommandInteraction,
+  APIInteractionResponse,
+} from 'discord-api-types/v10'
+import * as ping from './ping'
+import * as hello from './hello'
 
-// Command Registry - เพิ่มคำสั่งใหม่ที่นี่
-export const commands: CommandRegistry = {
-  [helloCommand.name]: helloCommand,
-  [pingCommand.name]: pingCommand,
-  [infoCommand.name]: infoCommand,
+// Define Interface สำหรับ Command
+export interface Command {
+  definition: {
+    name: string
+    description: string
+    type?: number // 1 = Chat Input
+    options?: any[] // สำหรับรับ arguments
+  }
+  handler: (
+    interaction: APIApplicationCommandInteraction
+  ) => Promise<APIInteractionResponse> | APIInteractionResponse
 }
 
-// Export สำหรับ registration
-export const commandsList = Object.values(commands).map((cmd) => ({
-  name: cmd.name,
-  description: cmd.description,
-  type: cmd.type || 1,
-  options: cmd.options || [],
-}))
+// รวม Commands ทั้งหมดไว้ใน Object เดียว (Map)
+export const commands: Record<string, Command> = {
+  ping,
+  hello,
+}

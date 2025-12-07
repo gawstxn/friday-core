@@ -1,75 +1,63 @@
-import { InteractionType, InteractionResponseType } from 'discord-interactions'
+// src/app/api/interactions/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { verifyDiscordRequest } from '@/lib/discord'
-import { commands } from '@/commands'
-import type { CommandContext } from '@/lib/types'
+import { verifyDiscordRequest } from '@/lib/discord' // (ใช้จากโค้ดชุดก่อนหน้า)
+import { commands } from '@/commands' // Import registry เข้ามา
+import {
+  InteractionType,
+  InteractionResponseType,
+  APIInteraction,
+} from 'discord-api-types/v10'
 
-export async function POST(request: NextRequest) {
-  // Verify Discord request
-  const isValid = await verifyDiscordRequest(request)
+export async function POST(req: NextRequest) {
+  const appID = process.env.DISCORD_APP_ID
+  const publicKey = process.env.DISCORD_PUBLIC_KEY
 
-  if (!isValid) {
+  if (!appID || !publicKey)
+    return NextResponse.json({ error: 'Config missing' }, { status: 500 })
+
+  // 1. Verify Request
+  const signature = req.headers.get('x-signature-ed25519')
+  const timestamp = req.headers.get('x-signature-timestamp')
+  const body = await req.text()
+
+  if (
+    !signature ||
+    !timestamp ||
+    !(await verifyDiscordRequest(body, signature, timestamp, publicKey))
+  ) {
     return NextResponse.json(
       { error: 'Invalid request signature' },
       { status: 401 }
     )
   }
 
-  const body = await request.json()
-  const { type, data, member, user } = body
+  // 2. Process Interaction
+  const interaction: APIInteraction = JSON.parse(body)
 
-  // Handle PING
-  if (type === InteractionType.PING) {
-    return NextResponse.json({
-      type: InteractionResponseType.PONG,
-    })
+  // Handle Ping
+  if (interaction.type === InteractionType.Ping) {
+    return NextResponse.json({ type: InteractionResponseType.Pong })
   }
 
-  // Handle Application Commands
-  if (type === InteractionType.APPLICATION_COMMAND) {
-    const { name } = data
-    const command = commands[name]
+  // Handle Commands
+  if (interaction.type === InteractionType.ApplicationCommand) {
+    const { name } = interaction.data
+    const command = commands[name] // ค้นหา Command จาก Registry
 
-    if (!command) {
-      return NextResponse.json({
-        type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-        data: {
-          content: '❌ ไม่พบคำสั่งนี้',
-          flags: 64, // Ephemeral
-        },
-      })
-    }
-
-    try {
-      // Create context
-      const ctx: CommandContext = {
-        interaction: body,
-        user: {
-          id: (member?.user || user).id,
-          username: (member?.user || user).username,
-          globalName: (member?.user || user).global_name,
-        },
-        guild: body.guild_id ? { id: body.guild_id } : undefined,
-        channel: body.channel_id ? { id: body.channel_id } : undefined,
+    if (command) {
+      try {
+        // เรียกใช้ function handler ที่แยกไฟล์ไว้
+        const response = await command.handler(interaction)
+        return NextResponse.json(response)
+      } catch (error) {
+        console.error(error)
+        return NextResponse.json({
+          type: InteractionResponseType.ChannelMessageWithSource,
+          data: { content: '❌ Something went wrong executing this command.' },
+        })
       }
-
-      // Execute command
-      const response = await command.execute(ctx)
-      return NextResponse.json(response)
-    } catch (error) {
-      console.error('Command execution error:', error)
-      return NextResponse.json({
-        type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-        data: {
-          content: '❌ เกิดข้อผิดพลาดในการประมวลผลคำสั่ง',
-          flags: 64,
-        },
-      })
     }
   }
 
-  return NextResponse.json(
-    { error: 'Unknown interaction type' },
-    { status: 400 }
-  )
+  return NextResponse.json({ error: 'Unknown command' }, { status: 400 })
 }

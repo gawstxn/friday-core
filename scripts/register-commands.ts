@@ -1,48 +1,43 @@
-const DISCORD_TOKEN = process.env.DISCORD_BOT_TOKEN
-const APPLICATION_ID = process.env.DISCORD_APPLICATION_ID
+import { commands } from '@/commands'
 
-const commands = [
-  {
-    name: 'hello',
-    description: 'ทักทายจาก bot',
-    type: 1,
-  },
-  {
-    name: 'ping',
-    description: 'ตรวจสอบการตอบสนองของ bot',
-    type: 1,
-  },
-  {
-    name: 'สวัสดี',
-    description: 'ทักทายภาษาไทย',
-    type: 1,
-  },
-  {
-    name: 'info',
-    description: 'ข้อมูล bot',
-    type: 1,
-  },
-]
+const DISCORD_API_URL = 'https://discord.com/api/v10'
 
 async function registerCommands() {
-  const url = `https://discord.com/api/v10/applications/${APPLICATION_ID}/commands`
+  const token = process.env.DISCORD_BOT_TOKEN
+  const appId = process.env.DISCORD_APP_ID
 
-  const response = await fetch(url, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bot ${DISCORD_TOKEN}`,
-    },
-    body: JSON.stringify(commands),
-  })
+  if (!token || !appId) {
+    console.error('Missing env vars')
+    process.exit(1)
+  }
 
-  if (response.ok) {
-    console.log('✅ Commands registered successfully!')
-    const data = await response.json()
-    console.log(data)
-  } else {
-    console.error('❌ Failed to register commands')
-    const error = await response.text()
+  // แปลง Object commands เป็น Array ของ definitions
+  const commandsList = Object.values(commands).map((cmd) => cmd.definition)
+
+  console.log(`Registering ${commandsList.length} commands...`)
+
+  try {
+    const response = await fetch(
+      `${DISCORD_API_URL}/applications/${appId}/commands`,
+      {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bot ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(commandsList),
+      }
+    )
+
+    if (response.ok) {
+      console.log('✅ Successfully registered commands!')
+      // แสดงรายชื่อคำสั่งที่ลงทะเบียนไป
+      commandsList.forEach((c) => console.log(` - /${c.name}`))
+    } else {
+      const text = await response.text()
+      console.error('❌ Failed:', text)
+    }
+  } catch (error) {
     console.error(error)
   }
 }

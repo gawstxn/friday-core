@@ -1,17 +1,19 @@
-import { InteractionResponseType } from 'discord-interactions'
-import type { Command } from '../lib/types'
-import { EMOJIS } from '@/lib/contants'
+import { Command } from './index'
+import { InteractionResponseType } from 'discord-api-types/v10'
 
-export const helloCommand: Command = {
+export const definition = {
   name: 'hello',
-  description: 'ทักทายจาก bot',
-  type: 1,
-  execute: async (ctx) => {
-    return {
-      type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-      data: {
-        content: `${EMOJIS.PARTY} สวัสดีครับ คุณ ${ctx.user.username}! ยินดีต้อนรับ`,
-      },
-    }
-  },
+  description: 'Say hello to the user',
+}
+
+export const handler: Command['handler'] = async (interaction) => {
+  // เราสามารถดึงข้อมูล User ได้จาก interaction.member.user
+  const user = interaction.member?.user
+
+  return {
+    type: InteractionResponseType.ChannelMessageWithSource,
+    data: {
+      content: `Hello there, ${user?.username || 'user'}! 👋`,
+    },
+  }
 }

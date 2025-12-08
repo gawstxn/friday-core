@@ -18,6 +18,11 @@ enum Role {
   ADMIN
 }
 
+enum TransactionType {
+  INCOME  // รายรับ
+  EXPENSE // รายจ่าย
+}
+
 model User {
   id        String   @id @default(cuid())
   discordId String   @unique
@@ -28,4 +33,18 @@ model User {
   banExpireAt DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  transactions Transaction[]
+}
+
+model Transaction {
+  id          String          @id @default(cuid())
+  amount      Decimal         @db.Decimal(10, 2) // เก็บเงินทศนิยม 2 ตำแหน่ง
+  description String
+  type        TransactionType
+  createdAt   DateTime        @default(now())
+  
+  // เชื่อมกับ User
+  user        User            @relation(fields: [userId], references: [id])
+  userId      String
 }

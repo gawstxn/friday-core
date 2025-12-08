@@ -1,38 +1,42 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { verifyDiscordRequest } from '@/lib/discord'
+import { verifyDiscordRequest } from '@/lib/discord-verify'
 import { commands } from '@/commands'
-import { InteractionType, InteractionResponseType, APIInteraction } from 'discord-api-types/v10'
+import { APIInteraction, InteractionType, InteractionResponseType } from 'discord-api-types/v10'
 
 export async function POST(req: NextRequest) {
-  try {
-    const publicKey = process.env.DISCORD_PUBLIC_KEY
-    const appId = process.env.DISCORD_APPLICATION_ID
+  const bodyText = await req.text()
+  const signature = req.headers.get('x-signature-ed25519') || ''
+  const timestamp = req.headers.get('x-signature-timestamp') || ''
 
-    if (!publicKey || !appId) console.log('⚠️ Missing DISCORD_CLIENT_PUBLIC_KEY or DISCORD_APPLICATION_ID environment variables')
+  const isValid = await verifyDiscordRequest(bodyText, signature, timestamp, process.env.DISCORD_PUBLIC_KEY!)
+  if (!isValid) {
+    return new NextResponse('Invalid request signature', { status: 401 })
+  }
+  const interaction = JSON.parse(bodyText) as APIInteraction
 
-    const signature = req.headers.get('x-signature-ed25519')
-    const timestamp = req.headers.get('x-signature-timestamp')
-    const body = await req.text()
+  if (interaction.type === InteractionType.Ping) {
+    return NextResponse.json({
+      type: InteractionResponseType.Pong,
+    })
+  }
 
-    if (!signature || !timestamp) return NextResponse.json({ error: 'Missing request headers' }, { status: 401 })
-    const isValidRequest = await verifyDiscordRequest(body, signature, timestamp, publicKey!)
+  if (interaction.type === InteractionType.ApplicationCommand) {
+    const commandName = interaction.data.name
+    const command = commands[commandName]
 
-    if (!isValidRequest) return NextResponse.json({ error: 'Invalid request signature' }, { status: 401 })
-    const interaction: APIInteraction = JSON.parse(body)
-
-    if (interaction.type === InteractionType.Ping) return NextResponse.json({ type: InteractionResponseType.Pong })
-    if (interaction.type === InteractionType.ApplicationCommand) {
-      const { name } = interaction.data
-      const command = commands[name]
-      if (command) {
-        const response = await command.handler(interaction)
+    if (command) {
+      try {
+        const response = await command.execute(interaction)
         return NextResponse.json(response)
+      } catch (error) {
+        console.error('Command Error:', error)
+        return NextResponse.json({
+          type: InteractionResponseType.ChannelMessageWithSource,
+          data: { content: '❌ Internal Error' },
+        })
       }
     }
-
-    return NextResponse.json({ error: 'Unknown command' }, { status: 400 })
-  } catch (error) {
-    console.error('💥 SERVER ERROR:', error)
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
+
+  return new NextResponse('Unknown Type', { status: 400 })
 }

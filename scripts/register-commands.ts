@@ -1,41 +1,48 @@
-import dotenv from 'dotenv'
-import path from 'path'
-dotenv.config({ path: path.resolve(process.cwd(), '.env') })
-
+import 'dotenv/config'
+import { DISCORD_CONFIG } from '@/config/discord'
 import { commands } from '@/commands'
-const DISCORD_API_URL = process.env.DISCORD_API_URL
 
-async function registerCommands() {
-  const token = process.env.DISCORD_BOT_TOKEN
-  const appId = process.env.DISCORD_APPLICATION_ID
-  if (!token || !appId) {
-    console.error('❌ Missing env vars: DISCORD_BOT_TOKEN or DISCORD_APPLICATION_ID')
-    process.exit(1)
-  }
-  const commandsList = Object.values(commands).map((cmd) => cmd.definition)
-  console.log(`Registering ${commandsList.length} commands to App ID: ${appId}...`)
+// Config
+const TOKEN = DISCORD_CONFIG.DISCORD_BOT_TOKEN
+const APPLICATION_ID = DISCORD_CONFIG.DISCORD_APPLICATION_ID
+const BASE_URL = DISCORD_CONFIG.DISCORD_API_BASE_URL
+
+async function main() {
+  const commandsData = Object.values(commands).map((cmd) => cmd.data)
+  console.log(`\n🚀 Started refreshing ${commandsData.length} application commands...`)
+  console.table(
+    commandsData.map((cmd) => {
+      const description = 'description' in cmd ? cmd.description : 'Context Menu (No Desc)'
+      const optionsCount = 'options' in cmd ? cmd.options?.length || 0 : 0
+      return {
+        Command: `/${cmd.name}`,
+        Description: description.length > 50 ? description.substring(0, 47) + '...' : description,
+        Options: optionsCount,
+      }
+    })
+  )
+  const endpoint = `${BASE_URL}/applications/${APPLICATION_ID}/commands`
 
   try {
-    const response = await fetch(`${DISCORD_API_URL}/applications/${appId}/commands`, {
+    const response = await fetch(endpoint, {
       method: 'PUT',
       headers: {
-        Authorization: `Bot ${token}`,
+        Authorization: `Bot ${TOKEN}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(commandsList),
+      body: JSON.stringify(commandsData),
     })
 
     if (response.ok) {
-      console.log('✅ Successfully registered commands!')
-      commandsList.forEach((c) => console.log(` - /${c.name}`))
+      const data = await response.json()
+      console.log(`\n✅ Success! Registered ${Array.isArray(data) ? data.length : 0} commands to Discord.`)
     } else {
-      // อ่าน Error text ให้ละเอียดขึ้น
       const errorData = await response.json()
-      console.error('❌ Failed:', JSON.stringify(errorData, null, 2))
+      console.error('\n❌ Error registering commands:', JSON.stringify(errorData, null, 2))
     }
   } catch (error) {
-    console.error('❌ Error:', error)
+    console.error('\n❌ Network or Server Error:', error)
   }
 }
 
-registerCommands()
+main()

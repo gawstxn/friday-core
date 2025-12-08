@@ -1,7 +1,7 @@
 // commands/index.ts
 import { Command } from '@/types/discord'
-import { ping } from './ping'
+import { pingCommand } from './ping'
 
 export const commands: Record<string, Command> = {
-  [ping.data.name]: ping,
+  [pingCommand.data.name]: pingCommand,
 }

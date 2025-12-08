@@ -2,7 +2,7 @@ import { Command } from '@/types/discord'
 import { InteractionResponseType } from 'discord-api-types/v10'
 import { getTimestampFromId } from '@/lib/snowflake'
 
-export const PingCommand: Command = {
+export const pingCommand: Command = {
   data: {
     name: 'ping',
     description: 'Check bot latency and server time',
